@@ -9,9 +9,8 @@ module.exports = function() {
         console.log("Received a bulk operation");
         next();
     });
-
+    var bookControllerInAction = bookController(Book);
     router.route('/')
-        var bookControllerInAction = bookController(Book);
         .get(bookControllerInAction.getAll)
         .post(bookControllerInAction.createBook);
 
@@ -37,14 +36,14 @@ module.exports = function() {
         });
     });
 
-    var dbCallback = function (res){
-        return function(err, saved){
-                if(err){
-                    res.status(500).send(err);
-                }else{
-                    res.status(200).json(saved);
-                }
+    var dbCallback = function(res) {
+        return function(err, saved) {
+            if (err) {
+                res.status(500).send(err);
+            } else {
+                res.status(200).json(saved);
             }
+        }
     }
 
 
@@ -61,9 +60,9 @@ module.exports = function() {
             req.book.read = req.body.read;
             req.book.save(dbCallback(res));
         })
-        .patch(function(req, res){
+        .patch(function(req, res) {
             console.log("Patching the book");
-            for(var i in req.body){
+            for (var i in req.body) {
                 req.book[i] = req.body[i];
             }
             req.book.save(dbCallback(res));
