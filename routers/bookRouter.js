@@ -1,5 +1,6 @@
 var express = require('express');
 var Book = require('../models/bookModel');
+var bookController = require('../controllers/bookController');
 
 module.exports = function() {
     var router = express.Router();
@@ -10,22 +11,9 @@ module.exports = function() {
     });
 
     router.route('/')
-        .get(function(req, res) {
-            Book.find(function(err, books) {
-                if (err) {
-                    console.log(err);
-                    res.status(500).send(err);
-                } else {
-                    res.status(200).json(books);
-                }
-            });
-        })
-        .post(function(req, res) {
-            console.log("CREATE Incoming request body: " + JSON.stringify(req.body));
-            var book = new Book(req.body)
-            book.save();
-            res.status(201).json(book);
-        });
+        var bookControllerInAction = bookController(Book);
+        .get(bookControllerInAction.getAll)
+        .post(bookControllerInAction.createBook);
 
 
     router.use('/os/:bookId', function(req, res, next) {
@@ -49,24 +37,40 @@ module.exports = function() {
         });
     });
 
+    var dbCallback = function (res){
+        return function(err, saved){
+                if(err){
+                    res.status(500).send(err);
+                }else{
+                    res.status(200).json(saved);
+                }
+            }
+    }
+
+
     router.route('/os/:bookId')
         .get(function(req, res) {
             console.log("Found and returning the book.");
             res.status(200).json(req.book);
         })
         .put(function(req, res) {
-            console.log("UPDATE the book");
+            console.log("Update the book");
             req.book.title = req.body.title;
             req.book.author = req.body.author;
             req.book.genre = req.body.genre;
             req.book.read = req.body.read;
-            req.book.save();
-            res.status(200).json(req.book);
+            req.book.save(dbCallback(res));
+        })
+        .patch(function(req, res){
+            console.log("Patching the book");
+            for(var i in req.body){
+                req.book[i] = req.body[i];
+            }
+            req.book.save(dbCallback(res));
         })
         .delete(function(req, res) {
             console.log("DELETE the book ");
-            req.book.remove();
-            res.status(202).json(req.book);
+            req.book.remove(dbCallback(res));
         });
 
     router.route('ns/:bookId')
